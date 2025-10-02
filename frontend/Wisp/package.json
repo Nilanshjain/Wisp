@@ -1,8 +1,9 @@
 {
-  "name": "wisp",
+  "name": "wispcloud-frontend",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
+  "description": "WispCloud - Enterprise-grade real-time messaging frontend",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

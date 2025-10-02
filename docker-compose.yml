@@ -1,0 +1,113 @@
+version: '3.8'
+
+services:
+  # MongoDB - Local development database
+  mongodb:
+    image: mongo:7
+    container_name: wispcloud-mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password123
+      MONGO_INITDB_DATABASE: wispcloud
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - wispcloud-network
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis - Caching and session storage
+  redis:
+    image: redis:7-alpine
+    container_name: wispcloud-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass redis123
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - wispcloud-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: development
+    container_name: wispcloud-backend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: development
+      PORT: 5001
+      MONGODB_URI: mongodb://admin:password123@mongodb:27017/wispcloud?authSource=admin
+      REDIS_URL: redis://:redis123@redis:6379
+      JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
+    ports:
+      - "5001:5001"
+    volumes:
+      - ./backend/src:/app/src
+      - ./backend/package.json:/app/package.json
+      - backend_node_modules:/app/node_modules
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - wispcloud-network
+    command: npm run dev
+
+  # Frontend
+  frontend:
+    build:
+      context: ./frontend/Wisp
+      dockerfile: Dockerfile
+      target: development
+    container_name: wispcloud-frontend
+    restart: unless-stopped
+    environment:
+      VITE_API_URL: http://localhost:5001
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend/Wisp/src:/app/src
+      - ./frontend/Wisp/public:/app/public
+      - ./frontend/Wisp/index.html:/app/index.html
+      - ./frontend/Wisp/vite.config.js:/app/vite.config.js
+      - ./frontend/Wisp/package.json:/app/package.json
+      - frontend_node_modules:/app/node_modules
+    depends_on:
+      - backend
+    networks:
+      - wispcloud-network
+    command: npm run dev -- --host
+
+volumes:
+  mongodb_data:
+    driver: local
+  redis_data:
+    driver: local
+  backend_node_modules:
+    driver: local
+  frontend_node_modules:
+    driver: local
+
+networks:
+  wispcloud-network:
+    driver: bridge

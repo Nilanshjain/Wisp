@@ -19,15 +19,44 @@ export const getMessages = async (req, res) => {
   try {
     const { id: userToChatId } = req.params;
     const myId = req.user._id;
+    const { limit = 50, cursor } = req.query;
 
-    const messages = await Message.find({
+    // Build query
+    const query = {
       $or: [
         { senderId: myId, receiverId: userToChatId },
         { senderId: userToChatId, receiverId: myId },
       ],
-    });
+    };
 
-    res.status(200).json(messages);
+    // Add cursor-based pagination
+    if (cursor) {
+      query._id = { $lt: cursor }; // Get messages before cursor
+    }
+
+    // Fetch messages with limit + 1 to check if there are more
+    const messages = await Message.find(query)
+      .sort({ createdAt: -1 }) // Newest first
+      .limit(parseInt(limit) + 1);
+
+    // Check if there are more messages
+    const hasMore = messages.length > limit;
+    const returnedMessages = hasMore ? messages.slice(0, limit) : messages;
+
+    // Reverse to show oldest first in UI
+    const sortedMessages = returnedMessages.reverse();
+
+    // Get next cursor (ID of the last message)
+    const nextCursor = hasMore ? returnedMessages[returnedMessages.length - 1]._id : null;
+
+    res.status(200).json({
+      messages: sortedMessages,
+      pagination: {
+        hasMore,
+        nextCursor,
+        limit: parseInt(limit),
+      },
+    });
   } catch (error) {
     console.log("Error in getMessages controller: ", error.message);
     res.status(500).json({ error: "Internal server error" });
@@ -42,7 +71,7 @@ export const sendMessage = async (req, res) => {
 
     let imageUrl;
     if (image) {
-      
+      // Upload image to Cloudinary
       const uploadResponse = await cloudinary.uploader.upload(image);
       imageUrl = uploadResponse.secure_url;
     }
@@ -56,7 +85,8 @@ export const sendMessage = async (req, res) => {
 
     await newMessage.save();
 
-    const receiverSocketId = getReceiverSocketId(receiverId);
+    // Get receiver's socket ID from Redis (async)
+    const receiverSocketId = await getReceiverSocketId(receiverId);
     if (receiverSocketId) {
       io.to(receiverSocketId).emit("newMessage", newMessage);
     }
