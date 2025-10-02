@@ -222,8 +222,9 @@ FRONTEND_URL=http://localhost:5173
 
 ## 📚 Documentation
 
-- **[DEPLOYMENT.md](./DEPLOYMENT.md)** - Complete deployment guide (AWS, Railway, Vercel)
-- **[TECHNICAL_GUIDE.md](./TECHNICAL_GUIDE.md)** - Comprehensive technical documentation
+- **[IMPLEMENTATION_GUIDE.md](./IMPLEMENTATION_GUIDE.md)** - Complete implementation guide with detailed explanations
+- **[DEPLOYMENT.md](./DEPLOYMENT.md)** - Deployment guide (AWS, Railway, Vercel)
+- **[TECHNICAL_GUIDE.md](./TECHNICAL_GUIDE.md)** - Technical overview and architecture
 
 ---
 
