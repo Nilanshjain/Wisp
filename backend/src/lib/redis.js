@@ -14,7 +14,7 @@ export const connectRedis = async () => {
             url: redisUrl,
             socket: {
                 reconnectStrategy: (retries) => {
-                    if (retries > 10) {
+                    if (retries > 3) {
                         console.error('Redis: Too many reconnection attempts. Stopping.');
                         return new Error('Too many retries');
                     }
@@ -26,7 +26,7 @@ export const connectRedis = async () => {
 
         // Error handler
         redisClient.on('error', (err) => {
-            console.error('Redis Client Error:', err);
+            console.error('Redis Client Error:', err.message);
             isConnected = false;
         });
 
@@ -51,8 +51,10 @@ export const connectRedis = async () => {
 
         return redisClient;
     } catch (error) {
-        console.error('Failed to connect to Redis:', error);
-        throw error;
+        console.warn('⚠️  Failed to connect to Redis - continuing without Redis:', error.message);
+        redisClient = null;
+        isConnected = false;
+        return null;
     }
 };
 

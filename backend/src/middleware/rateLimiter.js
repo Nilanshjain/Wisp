@@ -55,17 +55,17 @@ const createRateLimiter = (options = {}) => {
     }
 };
 
-// Global rate limiter - 100 requests per 15 minutes
+// Global rate limiter - 10000 requests per 15 minutes (increased for testing)
 export const globalLimiter = createRateLimiter({
     windowMs: 15 * 60 * 1000,
-    max: 100,
+    max: 10000,
     message: 'Too many requests from this IP, please try again later.',
 });
 
-// Auth rate limiter - Stricter for login/signup (5 requests per 15 min)
+// Auth rate limiter - Stricter for login/signup (500 requests per 15 min - increased for testing)
 export const authLimiter = createRateLimiter({
     windowMs: 15 * 60 * 1000,
-    max: 5,
+    max: 500,
     message: 'Too many authentication attempts, please try again later.',
     skipSuccessfulRequests: true, // Don't count successful logins
 });
