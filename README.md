@@ -14,16 +14,26 @@ A production-ready, scalable messaging application built with modern cloud archi
 
 ### Implemented ✅
 - **Real-time Messaging** - Instant message delivery with WebSocket (Socket.IO)
+- **Message Replies** - Reply to specific messages with context preservation
+- **Message Search** - Search through chat history in real-time
+- **Group Chats** - Multi-user group conversations with role-based access (owner/admin/member)
+- **OAuth Authentication** - Google Sign-In integration
+- **User Search & Invites** - Find users and send/accept chat invitations
 - **Horizontal Scaling** - Redis Adapter for multi-instance WebSocket support
 - **Message Pagination** - Cursor-based pagination for efficient data loading
-- **Typing Indicators** - Real-time typing status
-- **Rate Limiting** - Redis-backed rate limiting (5 auth attempts per 15 min, 50 messages per min)
+- **Typing Indicators** - Real-time typing status for DMs and groups
+- **Online Presence** - Real-time user online/offline status tracking
+- **Rate Limiting** - Redis-backed rate limiting (100 global, 100 auth, 50 messages per window)
 - **Input Validation** - Zod schemas for type-safe API validation
-- **Security Headers** - Helmet.js with CSP, XSS protection
-- **Database Optimization** - Compound indexes, connection pooling
+- **Security Headers** - Helmet.js with CSP, XSS protection, HSTS
+- **RBAC** - Role-based access control middleware for group permissions
+- **Analytics** - User activity and message analytics tracking
+- **NLP Features** - Sentiment analysis and concept extraction
+- **Database Optimization** - Compound indexes, connection pooling, efficient queries
 - **Caching Layer** - Redis for user profiles, sessions, online presence
 - **Health Monitoring** - `/health` endpoint for uptime checks
 - **Docker Support** - Full containerization with Docker Compose
+- **Seed Data** - Test user generation script for easy development/testing
 
 ### Architecture Highlights 🏗️
 - ✅ **Horizontal scaling ready** - Redis Adapter for Socket.IO
@@ -187,6 +197,45 @@ FRONTEND_URL=http://localhost:5173
 
 ---
 
+## 🧪 Test Users (Seed Data)
+
+For testing and development, you can use the following pre-seeded test accounts:
+
+### Run Seed Script
+```bash
+# Using Docker (recommended)
+docker exec wispcloud-backend npm run seed
+
+# Or locally
+cd backend && npm run seed
+```
+
+### Test User Credentials
+
+All users have password: **`password123`**
+
+| Email | Username | Role | Connections |
+|-------|----------|------|-------------|
+| **alice@test.com** | alice | Regular User | Connected: Bob, Carol, David |
+| **bob@test.com** | bob | Regular User | Connected: Alice, David; Pending: Eve |
+| **carol@test.com** | carol | Regular User | Connected: Alice, Eve |
+| **david@test.com** | david | Regular User | Connected: Bob, Alice |
+| **eve@test.com** | eve | Regular User | Connected: Carol; Sent invite: Bob |
+
+### Test Data Included
+- ✅ **5 test users** with unique avatars
+- ✅ **6 chat connections** (accepted invites)
+- ✅ **1 pending invite** (Eve → Bob)
+- ✅ **1 test group** "Team Alpha" with 3 members:
+  - Alice (owner)
+  - Bob (admin)
+  - Carol (member)
+- ✅ **Sample messages** in both DM and group chats
+
+> **Note:** Running the seed script will **clear all existing data** in the database.
+
+---
+
 ## 📊 Performance Metrics
 
 ### Achieved Targets
@@ -239,11 +288,50 @@ GET    /api/auth/check           - Check auth status
 PUT    /api/auth/update-profile  - Update profile
 ```
 
+### OAuth
+```
+GET    /api/auth/oauth/google           - Google OAuth login
+GET    /api/auth/oauth/google/callback  - OAuth callback handler
+```
+
 ### Messages
 ```
 GET    /api/messages/users       - Get all users
 GET    /api/messages/:id         - Get messages (with pagination)
 POST   /api/messages/send/:id    - Send message
+```
+
+### Users
+```
+GET    /api/users/search         - Search users by name/email
+GET    /api/users/profile/:id    - Get user profile
+```
+
+### Chat Invites
+```
+POST   /api/invites/send         - Send chat invite
+GET    /api/invites              - Get pending invites
+PUT    /api/invites/:id/accept   - Accept invite
+PUT    /api/invites/:id/reject   - Reject invite
+```
+
+### Groups
+```
+POST   /api/groups               - Create group
+GET    /api/groups               - Get user's groups
+GET    /api/groups/:id           - Get group details
+PUT    /api/groups/:id           - Update group
+DELETE /api/groups/:id           - Delete group
+POST   /api/groups/:id/members   - Add member
+DELETE /api/groups/:id/members/:userId - Remove member
+GET    /api/groups/:id/messages  - Get group messages
+POST   /api/groups/:id/messages  - Send group message
+```
+
+### Analytics
+```
+GET    /api/analytics/overview   - Get analytics overview
+GET    /api/analytics/user/:id   - Get user analytics
 ```
 
 ### Health
@@ -309,19 +397,21 @@ GET    /health                   - Server health check
 
 ## 🚧 Roadmap
 
-### Phase 3: Advanced Features
-- [ ] Read receipts
-- [ ] Message search
-- [ ] File attachments
-- [ ] Voice messages
-- [ ] Push notifications
+### Phase 3: Enhanced Features (Next)
+- [ ] Read receipts (schema ready)
+- [ ] Message search with full-text indexing
+- [ ] File attachments (documents, videos, audio)
+- [ ] Voice messages with waveform visualization
+- [ ] Push notifications (Web Push & FCM)
+- [ ] Enhanced NLP analytics dashboard
 
 ### Phase 4: DevOps & Monitoring
-- [ ] GitHub Actions CI/CD
-- [ ] Sentry error tracking
+- [ ] GitHub Actions CI/CD pipeline
+- [ ] Sentry error tracking integration
 - [ ] Grafana Cloud monitoring
-- [ ] API documentation (Swagger)
-- [ ] Load testing results
+- [ ] API documentation (Swagger/OpenAPI)
+- [ ] Load testing results (k6/Artillery)
+- [ ] E2E encryption (future consideration)
 
 ---
 

@@ -11,8 +11,11 @@ const GroupsSidebar = () => {
   const [selectedGroupForDetails, setSelectedGroupForDetails] = useState(null);
 
   useEffect(() => {
-    getUserGroups();
-  }, [getUserGroups]);
+    if (groups.length === 0) {
+      getUserGroups();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleSelectGroup = (group) => {
     setSelectedUser(null); // Clear personal chat selection
@@ -62,45 +65,51 @@ const GroupsSidebar = () => {
           </div>
         ) : (
           groups.map((group) => (
-            <button
+            <div
               key={group._id}
-              onClick={() => handleSelectGroup(group)}
               className={`
                 w-full p-3 flex items-center gap-3 rounded-lg
-                hover:bg-base-200 transition-colors text-left
+                hover:bg-base-200 transition-colors
                 ${selectedGroup?._id === group._id ? "bg-base-200 ring-1 ring-primary" : ""}
               `}
             >
-              <div className="relative">
-                {group.groupImage ? (
-                  <img
-                    src={group.groupImage}
-                    alt={group.name}
-                    className="size-12 object-cover rounded-full"
-                  />
-                ) : (
-                  <div className="size-12 rounded-full bg-primary/20 flex items-center justify-center">
-                    <Users className="size-6 text-primary" />
-                  </div>
-                )}
-              </div>
-
-              <div className="flex-1 min-w-0">
-                <div className="font-medium truncate">{group.name}</div>
-                <div className="text-sm text-base-content/60 truncate">
-                  {group.stats?.totalMembers || 0} members
+              <button
+                onClick={() => handleSelectGroup(group)}
+                className="flex items-center gap-3 flex-1 min-w-0 text-left"
+              >
+                <div className="relative">
+                  {group.groupImage ? (
+                    <img
+                      src={group.groupImage}
+                      alt={group.name}
+                      className="size-12 object-cover rounded-full"
+                    />
+                  ) : (
+                    <div className="size-12 rounded-full bg-primary/20 flex items-center justify-center">
+                      <Users className="size-6 text-primary" />
+                    </div>
+                  )}
                 </div>
-              </div>
+
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium truncate">{group.name}</div>
+                  <div className="text-sm text-base-content/60 truncate">
+                    {group.stats?.totalMembers || 0} members
+                  </div>
+                </div>
+              </button>
 
               {/* Info Button */}
               <button
                 onClick={(e) => handleGroupDetailsClick(e, group)}
                 className="btn btn-ghost btn-xs btn-circle"
                 title="Group Details"
+                name="group-details-button"
+                aria-label="View group details"
               >
                 <Info className="size-4" />
               </button>
-            </button>
+            </div>
           ))
         )}
       </div>

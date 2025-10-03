@@ -31,6 +31,12 @@ const messageSchema = new mongoose.Schema(
             type: String,
         },
 
+        replyTo: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Message',
+            default: null,
+        },
+
         status: {
             type: String,
             enum: ['sent', 'delivered', 'read'],

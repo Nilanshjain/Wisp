@@ -16,10 +16,11 @@ const CreateGroupModal = ({ isOpen, onClose }) => {
   const { users, getUsers } = useChatStore();
 
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && users.length === 0) {
       getUsers();
     }
-  }, [isOpen, getUsers]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
 
   // Filter users based on search query
   const filteredUsers = users.filter((user) =>
@@ -60,8 +61,8 @@ const CreateGroupModal = ({ isOpen, onClose }) => {
       return;
     }
 
-    if (groupName.length < 3 || groupName.length > 50) {
-      toast.error("Group name must be 3-50 characters");
+    if (groupName.length < 3 || groupName.length > 30) {
+      toast.error("Group name must be 3-30 characters");
       return;
     }
 
@@ -159,15 +160,15 @@ const CreateGroupModal = ({ isOpen, onClose }) => {
             <div className="form-control">
               <label className="label">
                 <span className="label-text font-medium">Group Name *</span>
-                <span className="label-text-alt">{groupName.length}/50</span>
+                <span className="label-text-alt">{groupName.length}/30</span>
               </label>
               <input
                 type="text"
                 placeholder="Enter group name"
-                className="input input-bordered"
+                className="input input-bordered input-sm w-48"
                 value={groupName}
                 onChange={(e) => setGroupName(e.target.value)}
-                maxLength={50}
+                maxLength={30}
                 required
               />
             </div>
@@ -176,14 +177,14 @@ const CreateGroupModal = ({ isOpen, onClose }) => {
             <div className="form-control">
               <label className="label">
                 <span className="label-text font-medium">Description</span>
-                <span className="label-text-alt">{description.length}/500</span>
+                <span className="label-text-alt">{description.length}/100</span>
               </label>
               <textarea
                 placeholder="Enter group description (optional)"
-                className="textarea textarea-bordered h-20"
+                className="textarea textarea-bordered textarea-sm h-14 w-56 resize-none"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                maxLength={500}
+                maxLength={100}
               />
             </div>
 

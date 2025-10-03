@@ -1,10 +1,9 @@
 import { useGroupStore } from "../store/useGroupStore";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAuthStore } from "../store/useAuthStore";
 import { formatMessageTime } from "../lib/utils";
-import { Users, Send, Image as ImageIcon, X } from "lucide-react";
+import { Users, Send, Image as ImageIcon, X, Search, Reply } from "lucide-react";
 import MessageSkeleton from "./skeletons/MessageSkeleton";
-import { useState } from "react";
 import toast from "react-hot-toast";
 
 const GroupChatContainer = () => {
@@ -26,6 +25,9 @@ const GroupChatContainer = () => {
   const messageEndRef = useRef(null);
   const [text, setText] = useState("");
   const [imagePreview, setImagePreview] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [replyingTo, setReplyingTo] = useState(null);
   const fileInputRef = useRef(null);
 
   useEffect(() => {
@@ -57,19 +59,24 @@ const GroupChatContainer = () => {
   }, [groupMessages]);
 
   const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+    e.preventDefault();
+    toast.error("Media uploads disabled for legal purposes");
+    return;
 
-    if (!file.type.startsWith("image/")) {
-      toast.error("Please select an image file");
-      return;
-    }
+    // Disabled code
+    // const file = e.target.files[0];
+    // if (!file) return;
 
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setImagePreview(reader.result);
-    };
-    reader.readAsDataURL(file);
+    // if (!file.type.startsWith("image/")) {
+    //   toast.error("Please select an image file");
+    //   return;
+    // }
+
+    // const reader = new FileReader();
+    // reader.onloadend = () => {
+    //   setImagePreview(reader.result);
+    // };
+    // reader.readAsDataURL(file);
   };
 
   const removeImage = () => {
@@ -88,40 +95,45 @@ const GroupChatContainer = () => {
       await sendGroupMessage(selectedGroup._id, {
         text: text.trim(),
         image: imagePreview,
+        replyTo: replyingTo?._id,
       });
 
       setText("");
       setImagePreview(null);
+      setReplyingTo(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
     } catch (error) {
       console.error("Error sending message:", error);
     }
   };
 
-  const handleDeleteMessage = async (messageId) => {
-    if (!confirm("Are you sure you want to delete this message?")) return;
-    try {
-      await deleteGroupMessage(selectedGroup._id, messageId);
-    } catch (error) {
-      console.error("Error deleting message:", error);
-    }
+  const handleReply = (message) => {
+    setReplyingTo(message);
   };
 
-  const canDeleteMessage = (message) => {
-    // User can delete their own messages or if they're admin/owner
-    return (
-      message.senderId?._id === authUser._id ||
-      selectedGroup?.memberRole === "owner" ||
-      selectedGroup?.memberRole === "admin"
-    );
+  const cancelReply = () => {
+    setReplyingTo(null);
   };
+
+  // Filter messages based on search query
+  const filteredMessages = groupMessages && Array.isArray(groupMessages)
+    ? groupMessages.filter((msg) =>
+        msg.text?.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : [];
+
 
   if (!selectedGroup) return null;
 
   if (isMessagesLoading) {
     return (
       <div className="flex-1 flex flex-col overflow-auto">
-        <GroupChatHeader group={selectedGroup} />
+        <GroupChatHeader
+          group={selectedGroup}
+          onSearchChange={setSearchQuery}
+          isSearchOpen={isSearchOpen}
+          setIsSearchOpen={setIsSearchOpen}
+        />
         <MessageSkeleton />
         <GroupMessageInput
           text={text}
@@ -131,6 +143,9 @@ const GroupChatContainer = () => {
           removeImage={removeImage}
           handleSendMessage={handleSendMessage}
           fileInputRef={fileInputRef}
+          replyingTo={replyingTo}
+          onCancelReply={cancelReply}
+          authUser={authUser}
         />
       </div>
     );
@@ -138,10 +153,15 @@ const GroupChatContainer = () => {
 
   return (
     <div className="flex-1 flex flex-col overflow-auto">
-      <GroupChatHeader group={selectedGroup} />
+      <GroupChatHeader
+        group={selectedGroup}
+        onSearchChange={setSearchQuery}
+        isSearchOpen={isSearchOpen}
+        setIsSearchOpen={setIsSearchOpen}
+      />
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {groupMessages && Array.isArray(groupMessages) && groupMessages.map((message) => (
+        {filteredMessages.map((message) => (
           <div
             key={message._id}
             className={`chat ${message.senderId?._id === authUser._id ? "chat-end" : "chat-start"}`}
@@ -166,6 +186,20 @@ const GroupChatContainer = () => {
               </time>
             </div>
             <div className="chat-bubble flex flex-col relative group">
+              {/* Reply context */}
+              {message.replyTo && (
+                <div className="bg-base-300/50 rounded px-2 py-1 mb-2 text-xs border-l-2 border-primary">
+                  <div className="font-semibold opacity-70">
+                    {message.replyTo.senderId?._id === authUser._id
+                      ? "You"
+                      : message.replyTo.senderId?.fullName || message.replyTo.senderId?.username}
+                  </div>
+                  <div className="opacity-60 truncate">
+                    {message.replyTo.text || "Image"}
+                  </div>
+                </div>
+              )}
+
               {message.image && (
                 <img
                   src={message.image}
@@ -175,16 +209,14 @@ const GroupChatContainer = () => {
               )}
               {message.text && <p>{message.text}</p>}
 
-              {/* Delete button */}
-              {canDeleteMessage(message) && (
-                <button
-                  onClick={() => handleDeleteMessage(message._id)}
-                  className="absolute -top-2 -right-2 btn btn-xs btn-circle btn-error opacity-0 group-hover:opacity-100 transition-opacity"
-                  title="Delete message"
-                >
-                  <X className="size-3" />
-                </button>
-              )}
+              {/* Reply button */}
+              <button
+                onClick={() => handleReply(message)}
+                className="absolute -top-2 -left-2 btn btn-xs btn-circle btn-ghost opacity-0 group-hover:opacity-100 transition-opacity"
+                title="Reply"
+              >
+                <Reply className="size-3" />
+              </button>
             </div>
           </div>
         ))}
@@ -198,13 +230,30 @@ const GroupChatContainer = () => {
         removeImage={removeImage}
         handleSendMessage={handleSendMessage}
         fileInputRef={fileInputRef}
+        replyingTo={replyingTo}
+        onCancelReply={cancelReply}
+        authUser={authUser}
       />
     </div>
   );
 };
 
 // Group Chat Header Component
-const GroupChatHeader = ({ group }) => {
+const GroupChatHeader = ({ group, onSearchChange, isSearchOpen, setIsSearchOpen }) => {
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const handleSearchChange = (e) => {
+    const value = e.target.value;
+    setSearchQuery(value);
+    onSearchChange?.(value);
+  };
+
+  const clearSearch = () => {
+    setSearchQuery("");
+    onSearchChange?.("");
+    setIsSearchOpen?.(false);
+  };
+
   return (
     <div className="border-b border-base-300 p-4">
       <div className="flex items-center gap-3">
@@ -225,7 +274,39 @@ const GroupChatHeader = ({ group }) => {
             {group.stats?.totalMembers || 0} members
           </p>
         </div>
+        <button
+          onClick={() => setIsSearchOpen?.(!isSearchOpen)}
+          className="btn btn-ghost btn-sm btn-circle"
+          title="Search messages"
+        >
+          <Search className="size-5" />
+        </button>
       </div>
+
+      {/* Search Bar */}
+      {isSearchOpen && (
+        <div className="mt-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-base-content/40" />
+            <input
+              type="text"
+              placeholder="Search messages..."
+              className="input input-bordered input-sm w-full pl-10 pr-10"
+              value={searchQuery}
+              onChange={handleSearchChange}
+              autoFocus
+            />
+            {searchQuery && (
+              <button
+                onClick={clearSearch}
+                className="absolute right-3 top-1/2 -translate-y-1/2 btn btn-ghost btn-xs btn-circle"
+              >
+                <X className="size-3" />
+              </button>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -239,9 +320,38 @@ const GroupMessageInput = ({
   removeImage,
   handleSendMessage,
   fileInputRef,
+  replyingTo,
+  onCancelReply,
+  authUser,
 }) => {
   return (
     <div className="border-t border-base-300 p-4">
+      {/* Reply context */}
+      {replyingTo && (
+        <div className="mb-3 bg-base-200 rounded-lg p-3 border-l-4 border-primary">
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <div className="text-xs font-semibold text-primary mb-1">
+                Replying to{" "}
+                {replyingTo.senderId?._id === authUser._id
+                  ? "yourself"
+                  : replyingTo.senderId?.fullName || replyingTo.senderId?.username}
+              </div>
+              <div className="text-sm opacity-70 truncate">
+                {replyingTo.text || "Image"}
+              </div>
+            </div>
+            <button
+              onClick={onCancelReply}
+              className="btn btn-ghost btn-xs btn-circle"
+              type="button"
+            >
+              <X className="size-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
       {imagePreview && (
         <div className="mb-3 relative inline-block">
           <img
@@ -269,8 +379,9 @@ const GroupMessageInput = ({
 
         <button
           type="button"
-          onClick={() => fileInputRef.current?.click()}
-          className="btn btn-circle btn-ghost"
+          onClick={() => toast.error("Media uploads disabled for legal purposes")}
+          className="btn btn-circle btn-ghost opacity-50 cursor-not-allowed"
+          title="Media uploads disabled"
         >
           <ImageIcon className="size-5" />
         </button>

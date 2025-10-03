@@ -7,7 +7,7 @@ import { connectDB } from "./lib/db.js";
 import { connectRedis } from "./lib/redis.js";
 import cors from "cors";
 import passport from "./config/passport.js";
-import { configureGoogleStrategy, configureAppleStrategy } from "./config/passport.js";
+import { configureGoogleStrategy } from "./config/passport.js";
 import authRoutes from "./routes/auth.route.js";
 import messageRoutes from "./routes/messageRoutes.js";
 import userRoutes from "./routes/user.routes.js";
@@ -23,7 +23,6 @@ dotenv.config();
 
 // Configure Passport strategies
 configureGoogleStrategy();
-configureAppleStrategy();
 
 const PORT = process.env.PORT || 5001;
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';

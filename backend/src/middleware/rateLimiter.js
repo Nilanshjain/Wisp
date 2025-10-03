@@ -1,6 +1,6 @@
 import rateLimit from 'express-rate-limit';
 import { RedisStore } from 'rate-limit-redis';
-import { getRedisClient } from '../lib/redis.js';
+import { getRedisClient, isRedisConnected } from '../lib/redis.js';
 
 /**
  * Create rate limiter with Redis store
@@ -15,6 +15,22 @@ const createRateLimiter = (options = {}) => {
         skipSuccessfulRequests = false,
         skipFailedRequests = false,
     } = options;
+
+    // Check if Redis is connected before trying to use it
+    if (!isRedisConnected()) {
+        console.warn('⚠️  Redis not connected for rate limiting, using memory store');
+
+        // Fallback to memory store if Redis is unavailable
+        return rateLimit({
+            windowMs,
+            max,
+            message: { error: message },
+            standardHeaders: true,
+            legacyHeaders: false,
+            skipSuccessfulRequests,
+            skipFailedRequests,
+        });
+    }
 
     try {
         const redisClient = getRedisClient();
@@ -40,7 +56,7 @@ const createRateLimiter = (options = {}) => {
             },
         });
     } catch (error) {
-        console.warn('⚠️  Redis not available for rate limiting, using memory store');
+        console.warn('⚠️  Redis error for rate limiting, using memory store:', error.message);
 
         // Fallback to memory store if Redis is unavailable
         return rateLimit({
@@ -55,17 +71,17 @@ const createRateLimiter = (options = {}) => {
     }
 };
 
-// Global rate limiter - 10000 requests per 15 minutes (increased for testing)
+// Global rate limiter - 100 requests per 15 minutes
 export const globalLimiter = createRateLimiter({
     windowMs: 15 * 60 * 1000,
-    max: 10000,
+    max: 100,
     message: 'Too many requests from this IP, please try again later.',
 });
 
-// Auth rate limiter - Stricter for login/signup (500 requests per 15 min - increased for testing)
+// Auth rate limiter - Stricter for login/signup
 export const authLimiter = createRateLimiter({
     windowMs: 15 * 60 * 1000,
-    max: 500,
+    max: process.env.NODE_ENV === 'development' ? 100 : 20,
     message: 'Too many authentication attempts, please try again later.',
     skipSuccessfulRequests: true, // Don't count successful logins
 });

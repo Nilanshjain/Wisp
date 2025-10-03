@@ -46,7 +46,7 @@ const userSchema = new mongoose.Schema(
         // OAuth fields
         authProvider: {
             type: String,
-            enum: ['local', 'google', 'apple'],
+            enum: ['local', 'google'],
             default: 'local',
         },
 

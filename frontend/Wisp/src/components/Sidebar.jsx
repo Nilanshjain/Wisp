@@ -30,7 +30,8 @@ const Sidebar = () => {
     getUsers();
     getRecentChats();
     getSentInvites();
-  }, [getUsers, getRecentChats, getSentInvites]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const filteredUsers = showOnlineOnly
     ? users.filter((user) => onlineUsers.includes(user._id))

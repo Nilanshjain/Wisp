@@ -23,7 +23,8 @@ const ChatInvites = () => {
     return () => {
       unsubscribeFromInvites();
     };
-  }, [getPendingInvites, subscribeToInvites, unsubscribeFromInvites]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleAccept = async (inviteId) => {
     const success = await acceptChatInvite(inviteId);

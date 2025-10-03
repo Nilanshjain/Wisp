@@ -7,7 +7,7 @@ import { io } from '../lib/socket.js';
 // Send message to group
 export const sendGroupMessage = async (req, res) => {
     try {
-        const { text, image } = req.body;
+        const { text, image, replyTo } = req.body;
         const { groupId } = req.params;
         const senderId = req.user._id;
 
@@ -54,6 +54,7 @@ export const sendGroupMessage = async (req, res) => {
             text,
             image: imageUrl,
             isGroupMessage: true,
+            replyTo: replyTo || null,
         });
 
         await newMessage.save();
@@ -62,9 +63,17 @@ export const sendGroupMessage = async (req, res) => {
         group.stats.totalMessages += 1;
         await group.save();
 
-        // Populate sender details
+        // Populate sender details and replyTo
         const populatedMessage = await Message.findById(newMessage._id)
-            .populate('senderId', 'username profilePic');
+            .populate('senderId', 'username profilePic fullName')
+            .populate({
+                path: 'replyTo',
+                select: 'text image senderId createdAt',
+                populate: {
+                    path: 'senderId',
+                    select: 'username profilePic fullName',
+                },
+            });
 
         // Get all active group members
         const groupMembers = await GroupMember.find({
@@ -118,7 +127,15 @@ export const getGroupMessages = async (req, res) => {
 
         // Fetch messages with limit + 1 to check if there are more
         const messages = await Message.find(query)
-            .populate('senderId', 'username profilePic')
+            .populate('senderId', 'username profilePic fullName')
+            .populate({
+                path: 'replyTo',
+                select: 'text image senderId createdAt',
+                populate: {
+                    path: 'senderId',
+                    select: 'username profilePic fullName',
+                },
+            })
             .sort({ createdAt: -1 }) // Newest first
             .limit(parseInt(limit) + 1);
 

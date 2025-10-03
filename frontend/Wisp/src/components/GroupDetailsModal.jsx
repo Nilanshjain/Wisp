@@ -33,8 +33,11 @@ const GroupDetailsModal = ({ isOpen, onClose, group }) => {
       setGroupName(group.name || "");
       setDescription(group.description || "");
       setImagePreview(group.groupImage || null);
-      getUsers();
+      if (users.length === 0) {
+        getUsers();
+      }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, group]);
 
   const loadGroupMembers = async () => {

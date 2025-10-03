@@ -1,26 +1,33 @@
 import { useRef, useState } from "react";
 import { useChatStore } from "../store/useChatStore";
+import { useAuthStore } from "../store/useAuthStore";
 import { Image, Send, X } from "lucide-react";
 import toast from "react-hot-toast";
 
-const MessageInput = () => {
+const MessageInput = ({ replyingTo, onCancelReply }) => {
   const [text, setText] = useState("");
   const [imagePreview, setImagePreview] = useState(null);
   const fileInputRef = useRef(null);
-  const { sendMessage } = useChatStore();
+  const { sendMessage, selectedUser } = useChatStore();
+  const { authUser } = useAuthStore();
 
   const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (!file.type.startsWith("image/")) {
-      toast.error("Please select an image file");
-      return;
-    }
+    e.preventDefault();
+    toast.error("Media uploads disabled for legal purposes");
+    return;
 
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setImagePreview(reader.result);
-    };
-    reader.readAsDataURL(file);
+    // Disabled code
+    // const file = e.target.files[0];
+    // if (!file.type.startsWith("image/")) {
+    //   toast.error("Please select an image file");
+    //   return;
+    // }
+
+    // const reader = new FileReader();
+    // reader.onloadend = () => {
+    //   setImagePreview(reader.result);
+    // };
+    // reader.readAsDataURL(file);
   };
 
   const removeImage = () => {
@@ -36,12 +43,14 @@ const MessageInput = () => {
       await sendMessage({
         text: text.trim(),
         image: imagePreview,
+        replyTo: replyingTo?._id,
       });
 
       // Clear form
       setText("");
       setImagePreview(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
+      onCancelReply?.();
     } catch (error) {
       console.error("Failed to send message:", error);
     }
@@ -49,6 +58,29 @@ const MessageInput = () => {
 
   return (
     <div className="p-4 w-full">
+      {/* Reply context */}
+      {replyingTo && (
+        <div className="mb-3 bg-base-200 rounded-lg p-3 border-l-4 border-primary">
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <div className="text-xs font-semibold text-primary mb-1">
+                Replying to {replyingTo.senderId === authUser._id ? "yourself" : selectedUser.fullName}
+              </div>
+              <div className="text-sm opacity-70 truncate">
+                {replyingTo.text || "Image"}
+              </div>
+            </div>
+            <button
+              onClick={onCancelReply}
+              className="btn btn-ghost btn-xs btn-circle"
+              type="button"
+            >
+              <X className="size-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
       {imagePreview && (
         <div className="mb-3 flex items-center gap-2">
           <div className="relative">
@@ -88,9 +120,9 @@ const MessageInput = () => {
 
           <button
             type="button"
-            className={`hidden sm:flex btn btn-circle
-                     ${imagePreview ? "text-emerald-500" : "text-zinc-400"}`}
-            onClick={() => fileInputRef.current?.click()}
+            className="hidden sm:flex btn btn-circle text-zinc-400 opacity-50 cursor-not-allowed"
+            onClick={() => toast.error("Media uploads disabled for legal purposes")}
+            title="Media uploads disabled"
           >
             <Image size={20} />
           </button>

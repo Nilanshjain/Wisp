@@ -76,7 +76,15 @@ export const getMessages = async (req, res) => {
     // Fetch messages with limit + 1 to check if there are more
     const messages = await Message.find(query)
       .sort({ createdAt: -1 }) // Newest first
-      .limit(parseInt(limit) + 1);
+      .limit(parseInt(limit) + 1)
+      .populate({
+        path: 'replyTo',
+        select: 'text image senderId createdAt',
+        populate: {
+          path: 'senderId',
+          select: 'username fullName profilePic',
+        },
+      });
 
     // Check if there are more messages
     const hasMore = messages.length > limit;
@@ -104,7 +112,7 @@ export const getMessages = async (req, res) => {
 
 export const sendMessage = async (req, res) => {
   try {
-    const { text, image } = req.body;
+    const { text, image, replyTo } = req.body;
     const { id: receiverId } = req.params;
     const senderId = req.user._id;
 
@@ -120,9 +128,20 @@ export const sendMessage = async (req, res) => {
       receiverId,
       text,
       image: imageUrl,
+      replyTo: replyTo || null,
     });
 
     await newMessage.save();
+
+    // Populate replyTo field before sending
+    await newMessage.populate({
+      path: 'replyTo',
+      select: 'text image senderId createdAt',
+      populate: {
+        path: 'senderId',
+        select: 'username fullName profilePic',
+      },
+    });
 
     // Get receiver's socket ID from Redis (async)
     const receiverSocketId = await getReceiverSocketId(receiverId);

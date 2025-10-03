@@ -1,5 +1,6 @@
 import { useChatStore } from "../store/useChatStore";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { Reply } from "lucide-react";
 
 import ChatHeader from "./ChatHeader";
 import MessageInput from "./MessageInput";
@@ -19,6 +20,9 @@ const ChatContainer = () => {
   } = useChatStore();
   const { authUser } = useAuthStore();
   const messageEndRef = useRef(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [replyingTo, setReplyingTo] = useState(null);
 
   useEffect(() => {
     getMessages(selectedUser._id);
@@ -37,28 +41,57 @@ const ChatContainer = () => {
     }
   }, [messages]);
 
+  // Filter messages based on search query
+  const filteredMessages = messages && Array.isArray(messages)
+    ? messages.filter((msg) =>
+        msg.text?.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : [];
+
+  const handleReply = (message) => {
+    setReplyingTo(message);
+  };
+
+  const cancelReply = () => {
+    setReplyingTo(null);
+  };
+
   if (isMessagesLoading) {
     return (
       <div className="flex-1 flex flex-col overflow-auto">
-        <ChatHeader />
+        <ChatHeader
+          onSearchChange={setSearchQuery}
+          isSearchOpen={isSearchOpen}
+          setIsSearchOpen={setIsSearchOpen}
+        />
         <MessageSkeleton />
-        <MessageInput />
+        <MessageInput replyingTo={replyingTo} onCancelReply={cancelReply} />
       </div>
     );
   }
 
   return (
     <div className="flex-1 flex flex-col overflow-auto">
-      <ChatHeader />
+      <ChatHeader
+        onSearchChange={setSearchQuery}
+        isSearchOpen={isSearchOpen}
+        setIsSearchOpen={setIsSearchOpen}
+      />
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages && Array.isArray(messages) && messages.map((message) => (
+        {filteredMessages.map((message) => {
+          // Debug logging
+          if (message.replyTo) {
+            console.log('Message with reply:', message);
+          }
+
+          return (
           <div
             key={message._id}
-            className={`chat ${message.senderId === authUser._id ? "chat-end" : "chat-start"}`}
+            className={`chat ${message.senderId === authUser._id ? "chat-end" : "chat-start"} group`}
             ref={messageEndRef}
           >
-            <div className=" chat-image avatar">
+            <div className="chat-image avatar">
               <div className="size-10 rounded-full border">
                 <img
                   src={
@@ -75,7 +108,22 @@ const ChatContainer = () => {
                 {formatMessageTime(message.createdAt)}
               </time>
             </div>
-            <div className="chat-bubble flex flex-col">
+            <div className="chat-bubble flex flex-col relative">
+              {/* Reply context */}
+              {message.replyTo && (
+                <div className="bg-base-300/50 rounded px-2 py-1 mb-2 text-xs border-l-2 border-primary">
+                  <div className="font-semibold opacity-70 flex items-center gap-1">
+                    <Reply className="size-3" />
+                    Replying to {message.replyTo.senderId?._id === authUser._id
+                      ? "yourself"
+                      : message.replyTo.senderId?.fullName || selectedUser.fullName}
+                  </div>
+                  <div className="opacity-60 truncate mt-0.5">
+                    {message.replyTo.text || "📷 Image"}
+                  </div>
+                </div>
+              )}
+
               {message.image && (
                 <img
                   src={message.image}
@@ -84,6 +132,15 @@ const ChatContainer = () => {
                 />
               )}
               {message.text && <p>{message.text}</p>}
+
+              {/* Reply button - shows on hover */}
+              <button
+                onClick={() => handleReply(message)}
+                className="absolute -top-2 -left-2 btn btn-xs btn-circle btn-ghost opacity-0 group-hover:opacity-100 transition-opacity"
+                title="Reply"
+              >
+                <Reply className="size-3" />
+              </button>
             </div>
             {/* Message Status (for sent messages only) */}
             {message.senderId === authUser._id && (
@@ -94,10 +151,11 @@ const ChatContainer = () => {
               </div>
             )}
           </div>
-        ))}
+          );
+        })}
       </div>
 
-      <MessageInput />
+      <MessageInput replyingTo={replyingTo} onCancelReply={cancelReply} />
     </div>
   );
 };

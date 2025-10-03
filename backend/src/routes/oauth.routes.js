@@ -18,19 +18,6 @@ router.get('/google/callback',
     oauthCallback
 );
 
-// Apple OAuth routes
-router.get('/apple',
-    passport.authenticate('apple', { scope: ['email', 'name'] })
-);
-
-router.get('/apple/callback',
-    passport.authenticate('apple', {
-        failureRedirect: '/api/auth/oauth/failure',
-        session: false
-    }),
-    oauthCallback
-);
-
 // OAuth failure route
 router.get('/failure', oauthFailure);
 
