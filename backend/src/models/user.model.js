@@ -19,7 +19,10 @@ const userSchema = new mongoose.Schema(
 
         password: {
             type: String,
-            required: true,
+            required: function() {
+                // Password is only required if not using OAuth
+                return !this.authProvider || this.authProvider === 'local';
+            },
             minlength: 6,
             select: false, // Don't include password in queries by default
         },
@@ -27,6 +30,30 @@ const userSchema = new mongoose.Schema(
         profilePic: {
             type: String,
             default: "",
+        },
+
+        // OAuth fields
+        authProvider: {
+            type: String,
+            enum: ['local', 'google', 'apple'],
+            default: 'local',
+        },
+
+        providerId: {
+            type: String,
+            sparse: true, // Allow null values but enforce uniqueness when set
+        },
+
+        // Role-based access control
+        role: {
+            type: String,
+            enum: ['user', 'moderator', 'admin'],
+            default: 'user',
+        },
+
+        isActive: {
+            type: Boolean,
+            default: true,
         },
 
         lastSeen: {
@@ -37,15 +64,10 @@ const userSchema = new mongoose.Schema(
     },
     {
         timestamps: true,
-        // Add indexes for common query patterns
-        indexes: [
-            { email: 1 },
-            { createdAt: -1 },
-        ]
     }
 );
 
-// Compound index for sorting users by creation date
+// Indexes for performance (email and createdAt defined here once)
 userSchema.index({ createdAt: -1 });
 
 const User = mongoose.model("User", userSchema);

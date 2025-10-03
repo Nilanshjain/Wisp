@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useAuthStore } from "../store/useAuthStore";
 import AuthImagePattern from "../components/AuthImagePattern";
+import OAuthButtons from "../components/OAuthButtons";
 import { Link } from "react-router-dom";
 import { Eye, EyeOff, Loader2, Lock, Mail, MessageSquare } from "lucide-react";
 
@@ -96,6 +97,9 @@ const LoginPage = () => {
               )}
             </button>
           </form>
+
+          {/* OAuth Buttons */}
+          <OAuthButtons />
 
           <div className="text-center">
             <p className="text-base-content/60">

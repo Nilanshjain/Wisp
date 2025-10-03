@@ -7,6 +7,9 @@ import SignUpPage from './pages/SignUpPage.jsx';
 import LoginPage from './pages/LoginPage.jsx';
 import SettingsPage from './pages/SettingsPage.jsx';
 import ProfilePage from './pages/ProfilePage.jsx';
+import UserProfilePage from './pages/UserProfilePage.jsx';
+import OAuthSuccessPage from './pages/OAuthSuccessPage.jsx';
+import AnalyticsPage from './pages/AnalyticsPage.jsx';
 import { axiosInstance } from './lib/axios.js';
 import { useAuthStore } from './store/useAuthStore.js';
 import {Loader} from  "lucide-react";
@@ -46,10 +49,9 @@ const App = () => {
         <Route path="/login" element= {!authUser ? <LoginPage/> :  <Navigate to= "/" />} />
         <Route path="/settings" element= {<SettingsPage/>} />
         <Route path="/profile" element= {authUser ? <ProfilePage/> : <Navigate to="/login" />} />
-
-
-
-
+        <Route path="/user/:userId" element= {authUser ? <UserProfilePage/> : <Navigate to="/login" />} />
+        <Route path="/auth/success" element= {<OAuthSuccessPage/>} />
+        <Route path="/analytics" element= {authUser ? <AnalyticsPage/> : <Navigate to="/login" />} />
 
       </Routes>
 

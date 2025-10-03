@@ -2,16 +2,28 @@ import express from "express";
 import cookieParser from "cookie-parser";
 import dotenv from "dotenv";
 import helmet from "helmet";
+import session from "express-session";
 import { connectDB } from "./lib/db.js";
 import { connectRedis } from "./lib/redis.js";
 import cors from "cors";
+import passport from "./config/passport.js";
+import { configureGoogleStrategy, configureAppleStrategy } from "./config/passport.js";
 import authRoutes from "./routes/auth.route.js";
 import messageRoutes from "./routes/messageRoutes.js";
+import userRoutes from "./routes/user.routes.js";
+import chatInviteRoutes from "./routes/chatInvite.routes.js";
+import oauthRoutes from "./routes/oauth.routes.js";
+import groupRoutes from "./routes/group.routes.js";
+import analyticsRoutes from "./routes/analytics.routes.js";
 import { app, server, initializeSocketIO } from "./lib/socket.js";
 import { globalLimiter } from "./middleware/rateLimiter.js";
 
 // Load environment variables
 dotenv.config();
+
+// Configure Passport strategies
+configureGoogleStrategy();
+configureAppleStrategy();
 
 const PORT = process.env.PORT || 5001;
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
@@ -40,6 +52,22 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(cookieParser());
 
+// Session middleware (required for Passport)
+app.use(session({
+    secret: process.env.SESSION_SECRET || 'your-session-secret-change-in-production',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+        secure: process.env.NODE_ENV === 'production',
+        httpOnly: true,
+        maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    }
+}));
+
+// Initialize Passport
+app.use(passport.initialize());
+app.use(passport.session());
+
 // CORS configuration
 app.use(cors({
     origin: FRONTEND_URL,
@@ -51,7 +79,12 @@ app.use(globalLimiter);
 
 // Routes
 app.use("/api/auth", authRoutes);
+app.use("/api/auth/oauth", oauthRoutes);
 app.use("/api/messages", messageRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/invites", chatInviteRoutes);
+app.use("/api/groups", groupRoutes);
+app.use("/api/analytics", analyticsRoutes);
 
 // Health check endpoint
 app.get("/health", (req, res) => {

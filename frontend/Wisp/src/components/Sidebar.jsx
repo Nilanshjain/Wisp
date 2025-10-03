@@ -1,14 +1,30 @@
 import { useEffect, useState } from "react";
 import { useChatStore } from "../store/useChatStore";
 import { useAuthStore } from "../store/useAuthStore";
+import { useUserStore } from "../store/useUserStore";
+import { useChatInviteStore } from "../store/useChatInviteStore";
+import { useGroupStore } from "../store/useGroupStore";
 import SidebarSkeleton from "./skeletons/SidebarSkeleton";
-import { Users } from "lucide-react";
+import UserSearchBar from "./UserSearchBar";
+import ChatInvites from "./ChatInvites";
+import CreateGroupModal from "./CreateGroupModal";
+import GroupsSidebar from "./GroupsSidebar";
+import { Users, UserPlus, UsersRound } from "lucide-react";
 
 const Sidebar = () => {
   const { getUsers, users, selectedUser, setSelectedUser, isUsersLoading } = useChatStore();
-
+  const { getRecentChats, recentChats } = useUserStore();
+  const { getSentInvites, pendingInvites } = useChatInviteStore();
+  const { setSelectedGroup } = useGroupStore();
   const { onlineUsers } = useAuthStore();
   const [showOnlineOnly, setShowOnlineOnly] = useState(false);
+  const [showInvites, setShowInvites] = useState(false);
+  const [showCreateGroup, setShowCreateGroup] = useState(false);
+
+  const handleSelectUser = (user) => {
+    setSelectedGroup(null); // Clear group selection
+    setSelectedUser(user);
+  };
 
   useEffect(() => {
     getUsers();
@@ -23,9 +39,36 @@ const Sidebar = () => {
   return (
     <aside className="h-full w-20 lg:w-72 border-r border-base-300 flex flex-col transition-all duration-200">
       <div className="border-b border-base-300 w-full p-5">
-        <div className="flex items-center gap-2">
-          <Users className="size-6" />
-          <span className="font-medium hidden lg:block">Contacts</span>
+        <div className="flex items-center gap-2 justify-between">
+          <div className="flex items-center gap-2">
+            <Users className="size-6" />
+            <span className="font-medium hidden lg:block">Contacts</span>
+          </div>
+
+          <div className="flex items-center gap-1">
+            {/* Create Group Button */}
+            <button
+              onClick={() => setShowCreateGroup(true)}
+              className="btn btn-sm btn-ghost"
+              title="Create Group"
+            >
+              <UsersRound className="size-5" />
+            </button>
+
+            {/* Chat Invites Button */}
+            <button
+              onClick={() => setShowInvites(!showInvites)}
+              className="btn btn-sm btn-ghost relative"
+              title="Chat Invites"
+            >
+              <UserPlus className="size-5" />
+              {pendingInvites.length > 0 && (
+                <span className="absolute -top-1 -right-1 bg-primary text-primary-content text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                  {pendingInvites.length}
+                </span>
+              )}
+            </button>
+          </div>
         </div>
         {/* TODO: Online filter toggle */}
         <div className="mt-3 hidden lg:flex items-center gap-2">
@@ -42,11 +85,25 @@ const Sidebar = () => {
         </div>
       </div>
 
-      <div className="overflow-y-auto w-full py-3">
+      {/* Chat Invites Section - Collapsible */}
+      {showInvites && <ChatInvites />}
+
+      {/* Create Group Modal */}
+      <CreateGroupModal
+        isOpen={showCreateGroup}
+        onClose={() => setShowCreateGroup(false)}
+      />
+
+      <div className="overflow-y-auto w-full">
+        {/* Groups Section */}
+        <GroupsSidebar />
+
+        {/* Contacts Section */}
+        <div className="py-3">
         {filteredUsers.map((user) => (
           <button
             key={user._id}
-            onClick={() => setSelectedUser(user)}
+            onClick={() => handleSelectUser(user)}
             className={`
               w-full p-3 flex items-center gap-3
               hover:bg-base-300 transition-colors
@@ -80,6 +137,7 @@ const Sidebar = () => {
         {filteredUsers.length === 0 && (
           <div className="text-center text-zinc-500 py-4">No online users</div>
         )}
+        </div>
       </div>
     </aside>
   );

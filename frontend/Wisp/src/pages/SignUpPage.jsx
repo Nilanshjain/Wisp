@@ -4,6 +4,7 @@ import { Eye, EyeOff, Loader2, Lock, Mail, MessageSquare, User } from "lucide-re
 import { Link } from "react-router-dom";
 
 import AuthImagePattern from "../components/AuthImagePattern";
+import OAuthButtons from "../components/OAuthButtons";
 import toast from "react-hot-toast";
 
 const SignUpPage = () => {
@@ -130,6 +131,9 @@ const SignUpPage = () => {
               )}
             </button>
           </form>
+
+          {/* OAuth Buttons */}
+          <OAuthButtons />
 
           <div className="text-center">
             <p className="text-base-content/60">

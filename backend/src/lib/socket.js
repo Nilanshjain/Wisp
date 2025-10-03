@@ -3,6 +3,7 @@ import { createAdapter } from "@socket.io/redis-adapter";
 import http from "http";
 import express from "express";
 import { createClient } from "redis";
+import GroupMember from "../models/groupMember.model.js";
 import {
     mapSocketToUser,
     removeSocketMapping,
@@ -76,6 +77,17 @@ io.on("connection", async (socket) => {
             // Set user as online in Redis
             await setUserOnline(userId);
 
+            // Join user's groups (as Socket.IO rooms)
+            const userGroups = await GroupMember.find({
+                userId,
+                status: 'active',
+            }).select('groupId');
+
+            for (const membership of userGroups) {
+                socket.join(membership.groupId.toString());
+                console.log(`👥 User ${userId} joined group room: ${membership.groupId}`);
+            }
+
             // Broadcast online users to all clients
             const onlineUsers = await getOnlineUsers();
             io.emit("getOnlineUsers", onlineUsers);
@@ -109,7 +121,7 @@ io.on("connection", async (socket) => {
         }
     });
 
-    // Handle typing indicator
+    // Handle typing indicator (DM)
     socket.on("typing", async (data) => {
         const receiverSocketId = await getReceiverSocketId(data.receiverId);
         if (receiverSocketId) {
@@ -118,6 +130,45 @@ io.on("connection", async (socket) => {
                 isTyping: data.isTyping
             });
         }
+    });
+
+    // Handle group typing indicator
+    socket.on("groupTyping", async (data) => {
+        const { groupId, isTyping } = data;
+
+        // Broadcast to all group members except sender
+        socket.to(groupId).emit("userTypingInGroup", {
+            groupId,
+            senderId: userId,
+            isTyping
+        });
+    });
+
+    // Handle joining a new group (when user is added to group)
+    socket.on("joinGroup", async (data) => {
+        const { groupId } = data;
+
+        // Verify user is a member of this group
+        const membership = await GroupMember.findOne({
+            groupId,
+            userId,
+            status: 'active',
+        });
+
+        if (membership) {
+            socket.join(groupId);
+            console.log(`👥 User ${userId} joined group room: ${groupId}`);
+
+            // Notify the user they've joined successfully
+            socket.emit("groupJoined", { groupId });
+        }
+    });
+
+    // Handle leaving a group
+    socket.on("leaveGroup", (data) => {
+        const { groupId } = data;
+        socket.leave(groupId);
+        console.log(`👋 User ${userId} left group room: ${groupId}`);
     });
 });
 
