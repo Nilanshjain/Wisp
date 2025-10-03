@@ -11,6 +11,17 @@ const userSchema = new mongoose.Schema(
             index: true, // Index for faster email lookups
         },
 
+        username: {
+            type: String,
+            required: true,
+            unique: true,
+            lowercase: true,
+            trim: true,
+            minlength: 3,
+            maxlength: 20,
+            index: true, // Index for username lookups
+        },
+
         fullName: {
             type: String,
             required: true,
@@ -69,6 +80,9 @@ const userSchema = new mongoose.Schema(
 
 // Indexes for performance (email and createdAt defined here once)
 userSchema.index({ createdAt: -1 });
+
+// Text index for search functionality (now includes username)
+userSchema.index({ fullName: 'text', email: 'text', username: 'text' });
 
 const User = mongoose.model("User", userSchema);
 

@@ -15,6 +15,7 @@ const ChatContainer = () => {
     selectedUser,
     subscribeToMessages,
     unsubscribeFromMessages,
+    markMessagesAsRead,
   } = useChatStore();
   const { authUser } = useAuthStore();
   const messageEndRef = useRef(null);
@@ -24,8 +25,11 @@ const ChatContainer = () => {
 
     subscribeToMessages();
 
+    // Mark messages as read when viewing conversation
+    markMessagesAsRead(selectedUser._id);
+
     return () => unsubscribeFromMessages();
-  }, [selectedUser._id, getMessages, subscribeToMessages, unsubscribeFromMessages]);
+  }, [selectedUser._id, getMessages, subscribeToMessages, unsubscribeFromMessages, markMessagesAsRead]);
 
   useEffect(() => {
     if (messageEndRef.current && messages) {
@@ -48,7 +52,7 @@ const ChatContainer = () => {
       <ChatHeader />
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.map((message) => (
+        {messages && Array.isArray(messages) && messages.map((message) => (
           <div
             key={message._id}
             className={`chat ${message.senderId === authUser._id ? "chat-end" : "chat-start"}`}
@@ -81,6 +85,14 @@ const ChatContainer = () => {
               )}
               {message.text && <p>{message.text}</p>}
             </div>
+            {/* Message Status (for sent messages only) */}
+            {message.senderId === authUser._id && (
+              <div className="chat-footer opacity-50 text-xs flex gap-1 items-center mt-1">
+                {message.status === 'sent' && <span>✓</span>}
+                {message.status === 'delivered' && <span>✓✓</span>}
+                {message.status === 'read' && <span className="text-blue-500">✓✓</span>}
+              </div>
+            )}
           </div>
         ))}
       </div>

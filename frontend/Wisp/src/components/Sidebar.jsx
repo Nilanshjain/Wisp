@@ -28,7 +28,9 @@ const Sidebar = () => {
 
   useEffect(() => {
     getUsers();
-  }, [getUsers]);
+    getRecentChats();
+    getSentInvites();
+  }, [getUsers, getRecentChats, getSentInvites]);
 
   const filteredUsers = showOnlineOnly
     ? users.filter((user) => onlineUsers.includes(user._id))
@@ -70,7 +72,13 @@ const Sidebar = () => {
             </button>
           </div>
         </div>
-        {/* TODO: Online filter toggle */}
+
+        {/* Search Bar */}
+        <div className="mt-3 hidden lg:block">
+          <UserSearchBar />
+        </div>
+
+        {/* Online filter toggle */}
         <div className="mt-3 hidden lg:flex items-center gap-2">
           <label className="cursor-pointer flex items-center gap-2">
             <input

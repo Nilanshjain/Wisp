@@ -1,6 +1,6 @@
 import express from "express";
 import { protectRoute } from "../middleware/auth.middleware.js";
-import { getMessages, getUsersForSidebar, sendMessage } from "../controllers/message.controllers.js";
+import { getMessages, getUsersForSidebar, sendMessage, markMessagesAsRead } from "../controllers/message.controllers.js";
 import { messageLimiter } from "../middleware/rateLimiter.js";
 import {
     validate,
@@ -29,6 +29,13 @@ router.post("/send/:id",
     validate(userIdParamSchema, 'params'),
     validate(sendMessageSchema),
     sendMessage
+);
+
+// Mark messages as read
+router.put("/read/:id",
+    protectRoute,
+    validate(userIdParamSchema, 'params'),
+    markMessagesAsRead
 );
 
 export default router;

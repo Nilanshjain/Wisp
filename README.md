@@ -310,7 +310,6 @@ GET    /health                   - Server health check
 ## 🚧 Roadmap
 
 ### Phase 3: Advanced Features
-- [ ] Group chats & channels
 - [ ] Read receipts
 - [ ] Message search
 - [ ] File attachments

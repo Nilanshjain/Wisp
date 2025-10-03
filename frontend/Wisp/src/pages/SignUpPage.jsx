@@ -12,6 +12,7 @@ const SignUpPage = () => {
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
+    username: "",
     password: "",
   });
 
@@ -21,6 +22,10 @@ const SignUpPage = () => {
     if (!formData.fullName.trim()) return toast.error("Full name is required");
     if (!formData.email.trim()) return toast.error("Email is required");
     if (!/\S+@\S+\.\S+/.test(formData.email)) return toast.error("Invalid email format");
+    if (!formData.username.trim()) return toast.error("Username is required");
+    if (formData.username.length < 3) return toast.error("Username must be at least 3 characters");
+    if (formData.username.length > 20) return toast.error("Username must be less than 20 characters");
+    if (!/^[a-zA-Z0-9_]+$/.test(formData.username)) return toast.error("Username can only contain letters, numbers, and underscores");
     if (!formData.password) return toast.error("Password is required");
     if (formData.password.length < 6) return toast.error("Password must be at least 6 characters");
 
@@ -89,6 +94,27 @@ const SignUpPage = () => {
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 />
               </div>
+            </div>
+
+            <div className="form-control">
+              <label className="label">
+                <span className="label-text font-medium">Username</span>
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <User className="size-5 text-base-content/40" />
+                </div>
+                <input
+                  type="text"
+                  className={`input input-bordered w-full pl-10`}
+                  placeholder="john_doe"
+                  value={formData.username}
+                  onChange={(e) => setFormData({ ...formData, username: e.target.value.toLowerCase() })}
+                />
+              </div>
+              <label className="label">
+                <span className="label-text-alt text-base-content/60">3-20 characters, letters, numbers, and underscores only</span>
+              </label>
             </div>
 
             <div className="form-control">

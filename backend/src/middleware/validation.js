@@ -14,14 +14,17 @@ export const validate = (schema, source = 'body') => {
             next();
         } catch (error) {
             if (error instanceof z.ZodError) {
+                console.log('Validation error:', JSON.stringify(error, null, 2));
+                const details = error.issues ? error.issues.map(err => ({
+                    field: err.path.join('.'),
+                    message: err.message,
+                })) : [];
                 return res.status(400).json({
                     error: 'Validation failed',
-                    details: error.errors.map(err => ({
-                        field: err.path.join('.'),
-                        message: err.message,
-                    })),
+                    details,
                 });
             }
+            console.log('Non-Zod error in validation:', error);
             next(error);
         }
     };
@@ -33,6 +36,12 @@ export const signupSchema = z.object({
         .email('Invalid email format')
         .min(3, 'Email must be at least 3 characters')
         .max(100, 'Email too long'),
+    username: z.string()
+        .min(3, 'Username must be at least 3 characters')
+        .max(20, 'Username must be less than 20 characters')
+        .regex(/^[a-zA-Z0-9_]+$/, 'Username can only contain letters, numbers, and underscores')
+        .trim()
+        .toLowerCase(),
     password: z.string()
         .min(6, 'Password must be at least 6 characters')
         .max(100, 'Password too long'),
@@ -59,22 +68,30 @@ export const updateProfileSchema = z.object({
 
 // Message validation schemas
 export const sendMessageSchema = z.object({
-    text: z.string()
-        .min(1, 'Message cannot be empty')
-        .max(5000, 'Message too long')
-        .trim()
-        .optional(),
-    image: z.string()
-        .url('Invalid image URL')
-        .optional()
-        .or(z.string().startsWith('data:image/', 'Invalid base64 image')),
+    text: z.union([
+        z.string().trim().min(1, 'Message cannot be empty').max(5000, 'Message too long'),
+        z.literal(''),
+        z.null(),
+        z.undefined()
+    ]).optional(),
+    image: z.union([
+        z.string().url('Invalid image URL'),
+        z.string().startsWith('data:image/', 'Invalid base64 image'),
+        z.null(),
+        z.undefined()
+    ]).optional(),
 }).refine(
-    data => data.text || data.image,
+    data => (data.text && data.text.trim()) || data.image,
     { message: 'Either text or image must be provided' }
 );
 
 export const userIdParamSchema = z.object({
     id: z.string()
+        .regex(/^[0-9a-fA-F]{24}$/, 'Invalid user ID format'),
+});
+
+export const userProfileParamSchema = z.object({
+    userId: z.string()
         .regex(/^[0-9a-fA-F]{24}$/, 'Invalid user ID format'),
 });
 
@@ -88,6 +105,18 @@ export const paginationSchema = z.object({
         .optional(),
 });
 
+export const searchQuerySchema = z.object({
+    q: z.string()
+        .min(2, 'Search query must be at least 2 characters')
+        .max(100, 'Search query too long'),
+    limit: z.string()
+        .optional()
+        .transform(val => val ? parseInt(val, 10) : 20)
+        .refine(val => val > 0 && val <= 100, 'Limit must be between 1 and 100'),
+    cursor: z.string()
+        .optional(),
+});
+
 export default {
     validate,
     signupSchema,
@@ -96,4 +125,5 @@ export default {
     sendMessageSchema,
     userIdParamSchema,
     paginationSchema,
+    searchQuerySchema,
 };

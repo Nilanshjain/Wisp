@@ -4,19 +4,30 @@ import User from "../models/user.model.js"
 import bcrypt from "bcryptjs"
 
 export const signup = async (req,res) => {
-    const {fullName,email,password} = req.body
+    const {fullName,email,password,username} = req.body
     try {
-     if(!fullName || !email || !password ){
+     if(!fullName || !email || !password || !username){
         return res.status(400).json({ message: "All fields are required" });
 
-     }   
-    if(password.length < 6) { 
+     }
+    if(password.length < 6) {
         return res.status(400).json({ message: " Password should be atleast 6 characters" });
     }
-    
-    const user = await User.findOne({email})
 
-    if (user) return res.status(400).json({message: "Email already exists"});
+    if(username.length < 3 || username.length > 20) {
+        return res.status(400).json({ message: "Username must be 3-20 characters" });
+    }
+
+    const existingUser = await User.findOne({$or: [{email}, {username}]})
+
+    if (existingUser) {
+        if(existingUser.email === email) {
+            return res.status(400).json({message: "Email already exists"});
+        }
+        if(existingUser.username === username) {
+            return res.status(400).json({message: "Username already taken"});
+        }
+    }
 
     const salt = await bcrypt.genSalt(10)
     const hashPassword = await bcrypt.hash(password,salt)
@@ -24,6 +35,7 @@ export const signup = async (req,res) => {
     const newUser = new User({
         fullName,
         email,
+        username,
         password: hashPassword
     })
 
@@ -36,6 +48,7 @@ export const signup = async (req,res) => {
             _id: newUser._id,
             fullName: newUser.fullName,
             email: newUser.email,
+            username: newUser.username,
             profilePic: newUser.profilePic,
         })
 
@@ -53,7 +66,7 @@ export const login = async (req,res) => {
     const {email,password} = req.body
     try {
 
-    const user = await User.findOne({email})
+    const user = await User.findOne({email}).select("+password")
     if(!user){
         return res.status(400).json({message: "Invalid credentials"});
     }
@@ -70,6 +83,7 @@ export const login = async (req,res) => {
         _id: user._id,
         fullName: user.fullName,
         email: user.email,
+        username: user.username,
         profilePic: user.profilePic,
     });
 
