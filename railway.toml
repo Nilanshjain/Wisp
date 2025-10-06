@@ -1,0 +1,13 @@
+# Railway configuration for WispCloud monorepo
+# This configures the backend service deployment
+
+[build]
+builder = "nixpacks"
+buildCommand = "cd backend && npm ci"
+
+[deploy]
+startCommand = "cd backend && npm start"
+healthcheckPath = "/health"
+healthcheckTimeout = 100
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 10

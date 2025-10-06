@@ -54,10 +54,14 @@ services:
       MONGODB_URI: mongodb://admin:password123@mongodb:27017/wispcloud?authSource=admin
       REDIS_URL: redis://:redis123@redis:6379
       JWT_SECRET: ${JWT_SECRET:-ayushi123}
+      SESSION_SECRET: ${SESSION_SECRET:-default-session-secret}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
+      BACKEND_URL: ${BACKEND_URL:-http://localhost:5001}
       CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
       CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
       CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
     ports:
       - "5001:5001"
     volumes:

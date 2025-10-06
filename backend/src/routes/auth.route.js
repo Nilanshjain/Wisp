@@ -39,4 +39,15 @@ router.put("/update-profile",
 // Check auth status
 router.get("/check", protectRoute, checkAuth);
 
+// Get available authentication methods
+router.get("/methods", (req, res) => {
+    const methods = {
+        emailPassword: true,
+        oauth: {
+            google: !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET)
+        }
+    };
+    res.json(methods);
+});
+
 export default router;

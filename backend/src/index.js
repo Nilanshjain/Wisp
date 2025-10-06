@@ -78,7 +78,23 @@ app.use(globalLimiter);
 
 // Routes
 app.use("/api/auth", authRoutes);
-app.use("/api/auth/oauth", oauthRoutes);
+
+// Only enable OAuth routes if credentials are configured
+if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+    app.use("/api/auth/oauth", oauthRoutes);
+    console.log('✅ OAuth routes enabled');
+} else {
+    console.log('⚠️  OAuth routes disabled - credentials not configured');
+    // Provide helpful error message when OAuth routes are accessed but disabled
+    app.use("/api/auth/oauth", (req, res) => {
+        res.status(503).json({
+            message: "OAuth authentication is not configured",
+            details: "Google OAuth credentials are not set. Please use email/password authentication or contact the administrator to enable OAuth.",
+            availableAuth: ["email/password"]
+        });
+    });
+}
+
 app.use("/api/messages", messageRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/invites", chatInviteRoutes);

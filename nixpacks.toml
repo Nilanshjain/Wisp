@@ -1,0 +1,14 @@
+# Nixpacks configuration for WispCloud Backend
+# This file tells Railway/Railpack how to build and deploy the backend service
+
+[phases.setup]
+nixPkgs = ['nodejs_20']
+
+[phases.install]
+cmds = ['cd backend && npm ci']
+
+[phases.build]
+cmds = ['echo "No build step required for Node.js backend"']
+
+[start]
+cmd = 'cd backend && npm start'
