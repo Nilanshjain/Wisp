@@ -93,6 +93,13 @@ export const useAuthStore = create((set, get) => ({
           set({ isUpdatingProfile: false });
         }
       },
+
+    setAuthUser: (user) => {
+        set({ authUser: user });
+        if (user) {
+          get().connectSocket();
+        }
+      },
     
       connectSocket: () => {
         const { authUser, socket: existingSocket } = get();
