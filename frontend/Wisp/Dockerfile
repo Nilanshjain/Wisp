@@ -26,7 +26,7 @@ FROM base AS builder
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm ci
+RUN npm install && npm cache clean --force
 
 COPY . .
 
