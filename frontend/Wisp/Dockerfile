@@ -1,5 +1,5 @@
 # Multi-stage build for optimized production image
-FROM node:20-alpine AS base
+FROM node:20-slim AS base
 
 # Install dependencies only when needed
 FROM base AS deps
@@ -26,7 +26,8 @@ FROM base AS builder
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm install && npm cache clean --force
+# Clean install to ensure correct platform binaries
+RUN rm -rf node_modules package-lock.json && npm install && npm cache clean --force
 
 COPY . .
 
