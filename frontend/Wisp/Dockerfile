@@ -43,6 +43,7 @@ COPY nginx.conf /etc/nginx/conf.d/default.conf
 # Copy built assets from builder stage
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-EXPOSE 80
+# Expose port 8080 for Railway
+EXPOSE 8080
 
 CMD ["nginx", "-g", "daemon off;"]
