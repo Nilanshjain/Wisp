@@ -1,0 +1,15 @@
+{
+  "name": "wispcloud",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "cd backend && npm start",
+    "dev": "cd backend && npm run dev",
+    "install": "cd backend && npm install",
+    "install-frontend": "cd frontend/Wisp && npm install"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=9.0.0"
+  }
+}

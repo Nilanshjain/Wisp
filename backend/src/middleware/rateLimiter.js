@@ -71,10 +71,10 @@ const createRateLimiter = (options = {}) => {
     }
 };
 
-// Global rate limiter - 100 requests per 15 minutes
+// Global rate limiter - More lenient in development
 export const globalLimiter = createRateLimiter({
     windowMs: 15 * 60 * 1000,
-    max: 100,
+    max: process.env.NODE_ENV === 'development' ? 1000 : 100, // 1000 for dev, 100 for prod
     message: 'Too many requests from this IP, please try again later.',
 });
 
