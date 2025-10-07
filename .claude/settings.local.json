@@ -2,7 +2,32 @@
   "permissions": {
     "allow": [
       "Bash(git commit:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(git add:*)",
+      "Bash(if exist ec9051a_changes.patch del ec9051a_changes.patch)",
+      "Bash(if exist tash del tash)",
+      "Bash(if exist tatus del tatus)",
+      "Bash(if exist nul del nul)",
+      "Bash(if exist backendnul del backendnul)",
+      "Bash(cat:*)",
+      "Bash(rm:*)",
+      "Bash(docker logs:*)",
+      "Bash(docker restart:*)",
+      "Bash(npm run dev:*)",
+      "Bash(redis-cli:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(test:*)",
+      "Bash(docker compose logs:*)",
+      "Bash(docker stats:*)",
+      "Bash(npm run seed:*)",
+      "Bash(docker exec:*)",
+      "Bash(node -e \"console.log(''JWT_SECRET='' + require(''crypto'').randomBytes(32).toString(''hex'')); console.log(''SESSION_SECRET='' + require(''crypto'').randomBytes(32).toString(''hex''));\")",
+      "WebFetch(domain:railpack.com)",
+      "Bash(docker compose:*)",
+      "Bash(curl:*)",
+      "Bash(git reset:*)",
+      "Bash(npm install)"
     ],
     "deny": [],
     "ask": []
