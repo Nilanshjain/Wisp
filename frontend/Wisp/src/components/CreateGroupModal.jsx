@@ -13,10 +13,10 @@ const CreateGroupModal = ({ isOpen, onClose }) => {
   const [searchQuery, setSearchQuery] = useState("");
 
   const { createGroup, addMembers } = useGroupStore();
-  const { users, getUsers } = useChatStore();
+  const { users, getUsers, isUsersLoading } = useChatStore();
 
   useEffect(() => {
-    if (isOpen && users.length === 0) {
+    if (isOpen) {
       getUsers();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -240,7 +240,12 @@ const CreateGroupModal = ({ isOpen, onClose }) => {
 
               {/* User List */}
               <div className="border border-base-300 rounded-lg max-h-60 overflow-y-auto">
-                {users.length === 0 ? (
+                {isUsersLoading ? (
+                  <div className="p-8 text-center">
+                    <div className="loading loading-spinner loading-md mx-auto mb-3"></div>
+                    <p className="text-base-content/60">Loading contacts...</p>
+                  </div>
+                ) : users.length === 0 ? (
                   <div className="p-8 text-center">
                     <Users className="size-12 mx-auto mb-3 text-base-content/40" />
                     <p className="text-base-content/70 font-medium mb-2">No contacts yet</p>
