@@ -11,12 +11,23 @@ export const useChatStore = create((set, get) => ({
   isMessagesLoading: false,
 
   getUsers: async () => {
+    const { isUsersLoading } = get();
+    if (isUsersLoading) return; // Prevent concurrent calls
+
     set({ isUsersLoading: true });
     try {
       const res = await axiosInstance.get("/messages/users");
       set({ users: res.data });
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to fetch users");
+      const message = error.response?.data?.message || error.response?.data?.error;
+      if (error.response?.status === 429) {
+        toast.error("Too many requests. Please wait a moment.");
+      } else if (message) {
+        toast.error(message);
+      } else {
+        console.error("Failed to fetch users:", error);
+      }
+      set({ users: [] });
     } finally {
       set({ isUsersLoading: false });
     }

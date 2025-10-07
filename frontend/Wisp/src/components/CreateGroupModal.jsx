@@ -11,13 +11,15 @@ const CreateGroupModal = ({ isOpen, onClose }) => {
   const [imagePreview, setImagePreview] = useState(null);
   const [selectedParticipants, setSelectedParticipants] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [hasLoadedUsers, setHasLoadedUsers] = useState(false);
 
   const { createGroup, addMembers } = useGroupStore();
   const { users, getUsers, isUsersLoading } = useChatStore();
 
   useEffect(() => {
-    if (isOpen) {
-      getUsers();
+    if (isOpen && !hasLoadedUsers && !isUsersLoading) {
+      getUsers().finally(() => setHasLoadedUsers(true));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
@@ -56,6 +58,8 @@ const CreateGroupModal = ({ isOpen, onClose }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    if (isSubmitting) return;
+
     if (!groupName.trim()) {
       toast.error("Group name is required");
       return;
@@ -65,6 +69,8 @@ const CreateGroupModal = ({ isOpen, onClose }) => {
       toast.error("Group name must be 3-30 characters");
       return;
     }
+
+    setIsSubmitting(true);
 
     try {
       const groupData = {
@@ -89,21 +95,27 @@ const CreateGroupModal = ({ isOpen, onClose }) => {
       setImagePreview(null);
       setSelectedParticipants([]);
       setSearchQuery("");
+      setHasLoadedUsers(false);
 
       onClose();
-      toast.success("Group created successfully!");
     } catch (error) {
       console.error("Error creating group:", error);
+      // Error is already handled by store with toast
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleClose = () => {
+    if (isSubmitting) return;
+
     setGroupName("");
     setDescription("");
     setGroupImage(null);
     setImagePreview(null);
     setSelectedParticipants([]);
     setSearchQuery("");
+    setHasLoadedUsers(false);
     onClose();
   };
 
@@ -295,15 +307,23 @@ const CreateGroupModal = ({ isOpen, onClose }) => {
               type="button"
               onClick={handleClose}
               className="btn btn-ghost"
+              disabled={isSubmitting}
             >
               Cancel
             </button>
             <button
               type="submit"
               className="btn btn-primary"
-              disabled={!groupName.trim()}
+              disabled={!groupName.trim() || isSubmitting}
             >
-              Create Group
+              {isSubmitting ? (
+                <>
+                  <span className="loading loading-spinner loading-sm"></span>
+                  Creating...
+                </>
+              ) : (
+                "Create Group"
+              )}
             </button>
           </div>
         </form>

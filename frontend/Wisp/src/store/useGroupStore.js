@@ -31,7 +31,14 @@ export const useGroupStore = create((set, get) => ({
             toast.success('Group created successfully');
             return res.data;
         } catch (error) {
-            toast.error(error.response?.data?.error || 'Failed to create group');
+            const message = error.response?.data?.error || error.response?.data?.message;
+            if (error.response?.status === 429) {
+                toast.error('Too many requests. Please wait a moment.');
+            } else if (message) {
+                toast.error(message);
+            } else {
+                toast.error('Failed to create group');
+            }
             throw error;
         }
     },
@@ -100,7 +107,14 @@ export const useGroupStore = create((set, get) => ({
             toast.success('Members added successfully');
             return res.data;
         } catch (error) {
-            toast.error(error.response?.data?.error || 'Failed to add members');
+            const message = error.response?.data?.error || error.response?.data?.message;
+            if (error.response?.status === 429) {
+                toast.error('Too many requests. Please wait a moment.');
+            } else if (message) {
+                toast.error(message);
+            } else {
+                toast.error('Failed to add members');
+            }
             throw error;
         }
     },
