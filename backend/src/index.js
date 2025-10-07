@@ -69,7 +69,7 @@ app.use(passport.session());
 
 // CORS configuration
 app.use(cors({
-    origin: FRONTEND_URL = "https://frontend-production-8c40.up.railway.app",
+    origin: FRONTEND_URL,
     credentials: true,
 }));
 
