@@ -9,6 +9,13 @@ export const createGroup = async (req, res) => {
         const { name, description, groupImage, type, maxMembers, settings } = req.body;
         const userId = req.user._id;
 
+        // Validate group name
+        if (!name || name.trim().length < 3) {
+            return res.status(400).json({ error: 'Group name must be at least 3 characters' });
+        }
+
+        console.log(`Creating group "${name}" for user ${userId}`);
+
         // Create the group
         const group = await Group.create({
             name,
@@ -31,9 +38,12 @@ export const createGroup = async (req, res) => {
         // Populate creator details
         const populatedGroup = await Group.findById(group._id).populate('createdBy', 'username email profilePic');
 
+        console.log(`Successfully created group ${group._id}`);
+
         res.status(201).json(populatedGroup);
     } catch (error) {
         console.error('Error in createGroup:', error);
+        console.error('Stack:', error.stack);
         res.status(500).json({ error: 'Internal server error' });
     }
 };
@@ -115,6 +125,13 @@ export const addMember = async (req, res) => {
         const { userIds } = req.body; // Array of user IDs to add
         const requestingUserId = req.user._id;
 
+        // Validate userIds
+        if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
+            return res.status(400).json({ error: 'At least one user ID is required' });
+        }
+
+        console.log(`Adding ${userIds.length} members to group ${groupId}`);
+
         // Get group
         const group = await Group.findById(groupId);
         if (!group) {
@@ -188,9 +205,12 @@ export const addMember = async (req, res) => {
             _id: { $in: addedMembers.map(m => m._id) }
         }).populate('userId', 'username email profilePic');
 
+        console.log(`Successfully added ${addedMembers.length} members to group ${groupId}`);
+
         res.status(200).json(populatedMembers);
     } catch (error) {
         console.error('Error in addMember:', error);
+        console.error('Stack:', error.stack);
         res.status(500).json({ error: 'Internal server error' });
     }
 };
