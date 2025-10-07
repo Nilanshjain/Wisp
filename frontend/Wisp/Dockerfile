@@ -25,13 +25,17 @@ CMD ["npm", "run", "dev", "--", "--host"]
 FROM base AS builder
 WORKDIR /app
 
+# Accept build arguments
+ARG VITE_API_URL
+ENV VITE_API_URL=$VITE_API_URL
+
 COPY package*.json ./
 # Clean install to ensure correct platform binaries
 RUN rm -rf node_modules package-lock.json && npm install && npm cache clean --force
 
 COPY . .
 
-# Build the application
+# Build the application with environment variable
 RUN npm run build
 
 # Production stage - serve with nginx
