@@ -14,6 +14,9 @@ export const getUsersForSidebar = async (req, res) => {
         { senderId: loggedInUserId, status: "accepted" },
         { receiverId: loggedInUserId, status: "accepted" }
       ]
+    }).catch(err => {
+      console.error("ChatInvite query error:", err);
+      return [];
     });
 
     // Extract user IDs from accepted invites
@@ -26,10 +29,11 @@ export const getUsersForSidebar = async (req, res) => {
     // Also find users with existing message history (legacy support)
     const existingConversations = await Message.distinct("senderId", {
       receiverId: loggedInUserId
-    });
+    }).catch(() => []);
+
     const sentMessages = await Message.distinct("receiverId", {
       senderId: loggedInUserId
-    });
+    }).catch(() => []);
 
     const conversationUserIds = [...new Set([
       ...existingConversations.map(id => id.toString()),
@@ -42,6 +46,11 @@ export const getUsersForSidebar = async (req, res) => {
       ...conversationUserIds
     ])];
 
+    // If no connections, return empty array
+    if (allConnectedUserIds.length === 0) {
+      return res.status(200).json([]);
+    }
+
     // Fetch user details
     const users = await User.find({
       _id: { $in: allConnectedUserIds }
@@ -50,6 +59,7 @@ export const getUsersForSidebar = async (req, res) => {
     res.status(200).json(users);
   } catch (error) {
     console.error("Error in getUsersForSidebar: ", error.message);
+    console.error("Stack:", error.stack);
     res.status(500).json({ error: "Internal server error" });
   }
 };
