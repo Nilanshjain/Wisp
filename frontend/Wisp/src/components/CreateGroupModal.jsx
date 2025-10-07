@@ -70,6 +70,18 @@ const CreateGroupModal = ({ isOpen, onClose }) => {
       return;
     }
 
+    // Validate that user has contacts
+    if (users.length === 0 && !isUsersLoading) {
+      toast.error("Please add contacts before creating a group");
+      return;
+    }
+
+    // Validate that at least one participant is selected
+    if (selectedParticipants.length === 0) {
+      toast.error("Please select at least one member for the group");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -81,12 +93,20 @@ const CreateGroupModal = ({ isOpen, onClose }) => {
         maxMembers: 100,
       };
 
-      const newGroup = await createGroup(groupData);
+      const newGroup = await Promise.race([
+        createGroup(groupData),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Request timeout')), 30000)
+        )
+      ]);
 
-      // Add selected participants if any
-      if (selectedParticipants.length > 0) {
-        await addMembers(newGroup._id, selectedParticipants);
-      }
+      // Add selected participants
+      await Promise.race([
+        addMembers(newGroup._id, selectedParticipants),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Request timeout')), 30000)
+        )
+      ]);
 
       // Reset form
       setGroupName("");
@@ -100,7 +120,10 @@ const CreateGroupModal = ({ isOpen, onClose }) => {
       onClose();
     } catch (error) {
       console.error("Error creating group:", error);
-      // Error is already handled by store with toast
+      if (error.message === 'Request timeout') {
+        toast.error('Request timed out. Please check your connection and try again.');
+      }
+      // Other errors are already handled by store with toast
     } finally {
       setIsSubmitting(false);
     }
@@ -314,7 +337,12 @@ const CreateGroupModal = ({ isOpen, onClose }) => {
             <button
               type="submit"
               className="btn btn-primary"
-              disabled={!groupName.trim() || isSubmitting}
+              disabled={
+                !groupName.trim() ||
+                isSubmitting ||
+                users.length === 0 ||
+                selectedParticipants.length === 0
+              }
             >
               {isSubmitting ? (
                 <>
