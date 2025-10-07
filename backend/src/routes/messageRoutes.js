@@ -1,7 +1,7 @@
 import express from "express";
 import { protectRoute } from "../middleware/auth.middleware.js";
 import { getMessages, getUsersForSidebar, sendMessage, markMessagesAsRead } from "../controllers/message.controllers.js";
-import { messageLimiter } from "../middleware/rateLimiter.js";
+import { messageLimiter, userDataLimiter } from "../middleware/rateLimiter.js";
 import {
     validate,
     sendMessageSchema,
@@ -11,8 +11,8 @@ import {
 
 const router = express.Router();
 
-// Get all users for sidebar
-router.get("/users", protectRoute, getUsersForSidebar);
+// Get all users for sidebar - with dedicated rate limiter
+router.get("/users", protectRoute, userDataLimiter, getUsersForSidebar);
 
 // Get messages with pagination
 router.get("/:id",

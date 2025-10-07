@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { X, Users, ImagePlus, Search } from "lucide-react";
 import { useGroupStore } from "../store/useGroupStore";
 import { useChatStore } from "../store/useChatStore";
@@ -12,17 +12,21 @@ const CreateGroupModal = ({ isOpen, onClose }) => {
   const [selectedParticipants, setSelectedParticipants] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [hasLoadedUsers, setHasLoadedUsers] = useState(false);
+
+  const loadingRef = useRef(false);
+  const submittingRef = useRef(false);
 
   const { createGroup, addMembers } = useGroupStore();
   const { users, getUsers, isUsersLoading } = useChatStore();
 
   useEffect(() => {
-    if (isOpen && !hasLoadedUsers && !isUsersLoading) {
-      getUsers().finally(() => setHasLoadedUsers(true));
+    if (isOpen && !loadingRef.current && !isUsersLoading && users.length === 0) {
+      loadingRef.current = true;
+      getUsers().finally(() => {
+        loadingRef.current = false;
+      });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen]);
+  }, [isOpen, getUsers, isUsersLoading, users.length]);
 
   // Filter users based on search query
   const filteredUsers = users.filter((user) =>
@@ -55,10 +59,15 @@ const CreateGroupModal = ({ isOpen, onClose }) => {
     );
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = useCallback(async (e) => {
     e.preventDefault();
+    e.stopPropagation();
 
-    if (isSubmitting) return;
+    // Prevent multiple submissions
+    if (isSubmitting || submittingRef.current) {
+      console.log("Already submitting, ignoring duplicate submission");
+      return;
+    }
 
     if (!groupName.trim()) {
       toast.error("Group name is required");
@@ -82,6 +91,7 @@ const CreateGroupModal = ({ isOpen, onClose }) => {
       return;
     }
 
+    submittingRef.current = true;
     setIsSubmitting(true);
 
     try {
@@ -93,6 +103,8 @@ const CreateGroupModal = ({ isOpen, onClose }) => {
         maxMembers: 100,
       };
 
+      console.log("Creating group with data:", { name: groupData.name, participantCount: selectedParticipants.length });
+
       const newGroup = await Promise.race([
         createGroup(groupData),
         new Promise((_, reject) =>
@@ -100,13 +112,18 @@ const CreateGroupModal = ({ isOpen, onClose }) => {
         )
       ]);
 
+      console.log("Group created successfully:", newGroup._id);
+
       // Add selected participants
+      console.log("Adding members to group...");
       await Promise.race([
         addMembers(newGroup._id, selectedParticipants),
         new Promise((_, reject) =>
           setTimeout(() => reject(new Error('Request timeout')), 30000)
         )
       ]);
+
+      console.log("Members added successfully");
 
       // Reset form
       setGroupName("");
@@ -115,7 +132,6 @@ const CreateGroupModal = ({ isOpen, onClose }) => {
       setImagePreview(null);
       setSelectedParticipants([]);
       setSearchQuery("");
-      setHasLoadedUsers(false);
 
       onClose();
     } catch (error) {
@@ -126,11 +142,15 @@ const CreateGroupModal = ({ isOpen, onClose }) => {
       // Other errors are already handled by store with toast
     } finally {
       setIsSubmitting(false);
+      submittingRef.current = false;
     }
-  };
+  }, [isSubmitting, groupName, users.length, isUsersLoading, selectedParticipants, groupImage, description, createGroup, addMembers, onClose]);
 
-  const handleClose = () => {
-    if (isSubmitting) return;
+  const handleClose = useCallback(() => {
+    if (isSubmitting || submittingRef.current) {
+      console.log("Cannot close while submitting");
+      return;
+    }
 
     setGroupName("");
     setDescription("");
@@ -138,9 +158,8 @@ const CreateGroupModal = ({ isOpen, onClose }) => {
     setImagePreview(null);
     setSelectedParticipants([]);
     setSearchQuery("");
-    setHasLoadedUsers(false);
     onClose();
-  };
+  }, [isSubmitting, onClose]);
 
   if (!isOpen) return null;
 

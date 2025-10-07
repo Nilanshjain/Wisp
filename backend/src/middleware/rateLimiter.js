@@ -71,10 +71,10 @@ const createRateLimiter = (options = {}) => {
     }
 };
 
-// Global rate limiter - More lenient in development
+// Global rate limiter - More lenient in development and production
 export const globalLimiter = createRateLimiter({
     windowMs: 15 * 60 * 1000,
-    max: process.env.NODE_ENV === 'development' ? 1000 : 100, // 1000 for dev, 100 for prod
+    max: process.env.NODE_ENV === 'development' ? 1000 : 500, // 1000 for dev, 500 for prod (increased from 100)
     message: 'Too many requests from this IP, please try again later.',
 });
 
@@ -107,10 +107,18 @@ export const apiLimiter = createRateLimiter({
     message: 'API rate limit exceeded, please try again later.',
 });
 
+// User data rate limiter - More lenient for fetching user lists
+export const userDataLimiter = createRateLimiter({
+    windowMs: 60 * 1000, // 1 minute
+    max: 100, // 100 requests per minute
+    message: 'Too many requests for user data, please try again later.',
+});
+
 export default {
     globalLimiter,
     authLimiter,
     messageLimiter,
     uploadLimiter,
     apiLimiter,
+    userDataLimiter,
 };

@@ -27,7 +27,16 @@
       "Bash(docker compose:*)",
       "Bash(curl:*)",
       "Bash(git reset:*)",
-      "Bash(npm install)"
+      "Bash(npm install)",
+      "Bash(git show:*)",
+      "Bash(awk:*)",
+      "Bash(xargs:*)",
+      "Bash(git reflog:*)",
+      "Bash(git gc:*)",
+      "Bash(git branch:*)",
+      "Bash(git stash:*)",
+      "Bash(git fsck:*)",
+      "Bash(git log:*)"
     ],
     "deny": [],
     "ask": []
