@@ -18,25 +18,51 @@ export const searchUsers = async (req, res) => {
       });
     }
 
-    // Build query
-    const query = {
-      $text: { $search: q },
-      _id: { $ne: loggedInUserId }, // Exclude current user
-    };
-
-    // Add cursor for pagination
-    if (cursor) {
-      query._id = {
-        ...query._id,
-        $lt: cursor
+    let users;
+    try {
+      // Try text search first (requires text index)
+      const query = {
+        $text: { $search: q },
+        _id: { $ne: loggedInUserId },
       };
-    }
 
-    // Execute search with limit + 1 to check for more results
-    const users = await User.find(query)
-      .select("fullName email username profilePic createdAt")
-      .sort({ score: { $meta: "textScore" }, _id: -1 })
-      .limit(parseInt(limit) + 1);
+      if (cursor) {
+        query._id = {
+          ...query._id,
+          $lt: cursor
+        };
+      }
+
+      users = await User.find(query)
+        .select("fullName email username profilePic createdAt")
+        .sort({ score: { $meta: "textScore" }, _id: -1 })
+        .limit(parseInt(limit) + 1);
+    } catch (textSearchError) {
+      console.warn("Text search failed, falling back to regex:", textSearchError.message);
+
+      // Fallback to regex search if text index doesn't exist
+      const searchRegex = new RegExp(q.trim(), 'i');
+      const query = {
+        $or: [
+          { fullName: searchRegex },
+          { username: searchRegex },
+          { email: searchRegex }
+        ],
+        _id: { $ne: loggedInUserId },
+      };
+
+      if (cursor) {
+        query._id = {
+          ...query._id,
+          $lt: cursor
+        };
+      }
+
+      users = await User.find(query)
+        .select("fullName email username profilePic createdAt")
+        .sort({ _id: -1 })
+        .limit(parseInt(limit) + 1);
+    }
 
     console.log(`✅ Search results: found ${users.length} users`);
 
@@ -55,6 +81,7 @@ export const searchUsers = async (req, res) => {
     });
   } catch (error) {
     console.error("❌ Error in searchUsers:", error.message);
+    console.error("Stack:", error.stack);
     res.status(500).json({ error: "Internal server error" });
   }
 };
